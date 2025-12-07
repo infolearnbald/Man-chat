@@ -1,86 +1,57 @@
 <!doctype html>
 <html lang="pt">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Man Chat — Mensagens</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Chat Coletivo</title>
+<link rel="stylesheet" href="style.css" />
+<style>
+.chat-box{height:calc(100vh-220px); overflow:auto; border:1px solid #ccc; padding:12px;}
+.message{margin-bottom:8px; padding:8px; border-radius:8px; max-width:80%; word-wrap:break-word;}
+.message.me{background:#DCF8C6; margin-left:auto;}
+.message.other{background:#fff; margin-right:auto; border:1px solid #eee;}
+.message img{max-width:120px; display:block; margin-top:4px;}
+</style>
 </head>
 <body>
-  <header class="topbar">
-    <div class="left">
-      <a href="index.html" class="link">Início</a>
-    </div>
-    <div class="center">Mensagens Coletivas</div>
-    <div class="right">
-      <a href="profile.html" class="link">Perfil</a>
-      <button id="logout" class="btn small red">Sair</button>
-    </div>
-  </header>
+<div class="container center">
+<h2>Chat Coletivo</h2>
+<div class="chat-box" id="chatBox"></div>
+<input id="msgInput" placeholder="Digite uma mensagem" />
+<input type="file" id="fileInput" />
+<button id="sendBtn" class="btn green">Enviar</button>
 
-  <main class="container chat-container">
-    <section id="chatBox" class="card chat-box"></section>
+<button id="logoutBtn" class="btn red">Sair</button>
+</div>
 
-    <div class="card input-area">
-      <input id="messageInput" type="text" placeholder="Escreve algo..." />
-      <div class="row">
-        <button id="sendBtn" class="btn green">Enviar</button>
-        <button id="fileBtn" class="btn blue">Enviar Arquivo</button>
-        <input id="fileInput" type="file" class="hidden" />
-      </div>
-    </div>
-  </main>
+<script type="module">
+import { authActions, chatActions } from './app.js';
+authActions.requireTeamVerifiedRedirect();
 
-  <script type="module" src="app.js"></script>
-  <script type="module">
-    import { chatActions, authActions } from './app.js';
+const chatBox=document.getElementById('chatBox');
+const msgInput=document.getElementById('msgInput');
+const fileInput=document.getElementById('fileInput');
 
-    // Proteção: se não autenticado, redireciona para login
-    authActions.requireAuthRedirect('login.html');
+document.getElementById('sendBtn').onclick=async ()=>{
+  const text=msgInput.value.trim();
+  if(text){ await chatActions.sendText(text); msgInput.value=''; }
+  const file=fileInput.files[0];
+  if(file){ await chatActions.sendFile(file); fileInput.value=''; }
+};
 
-    // Eventos
-    document.getElementById('logout').onclick = () => authActions.logout();
-    document.getElementById('sendBtn').onclick = async () => {
-      const text = document.getElementById('messageInput').value.trim();
-      if (!text) return;
-      await chatActions.sendText(text);
-      document.getElementById('messageInput').value = '';
-    };
+document.getElementById('logoutBtn').onclick=()=>authActions.logout();
 
-    document.getElementById('fileBtn').onclick = () => document.getElementById('fileInput').click();
-    document.getElementById('fileInput').onchange = async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      await chatActions.sendFile(file);
-      e.target.value = '';
-    };
-
-    // Carrega mensagens em tempo real
-    chatActions.onMessages(updateUI);
-
-    function updateUI(messages) {
-      const box = document.getElementById('chatBox');
-      box.innerHTML = '';
-      messages.forEach(m => {
-        const el = document.createElement('div');
-        el.className = 'msgRow';
-        el.innerHTML = `
-          <img class="avatar" src="${m.photoURL || 'avatar-placeholder.png'}" alt="avatar" />
-          <div class="msgCard ${m.isMe ? 'me' : 'other'}">
-            <div class="msgMeta"><strong>${escapeHtml(m.displayName || m.email)}</strong> <span class="time">${new Date(m.time).toLocaleString()}</span></div>
-            <div class="msgBody">${m.file ? `<a href="${m.file}" target="_blank">📎 ${escapeHtml(m.fileName || 'Arquivo')}</a>` : escapeHtml(m.text)}</div>
-          </div>
-        `;
-        box.appendChild(el);
-      });
-      box.scrollTop = box.scrollHeight;
-    }
-
-    // util
-    function escapeHtml(str) {
-      if (!str) return '';
-      return str.replace(/[&<>"'`=\/]/g, s => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','/':'&#x2F;','`':'&#96;','=':'&#61;' }[s]));
-    }
-  </script>
+chatActions.onMessages(msgs=>{
+  chatBox.innerHTML='';
+  msgs.forEach(m=>{
+    const div=document.createElement('div');
+    div.className='message '+(m.isMe?'me':'other');
+    div.innerHTML=`<b>${m.displayName}</b>: ${m.text||''}`;
+    if(m.file) div.innerHTML+=`<br><a href="${m.file}" target="_blank">[Arquivo] ${m.fileName||'Arquivo'}</a>`;
+    chatBox.appendChild(div);
+  });
+  chatBox.scrollTop=chatBox.scrollHeight;
+});
+</script>
 </body>
 </html>
