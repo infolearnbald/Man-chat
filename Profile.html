@@ -1,63 +1,57 @@
 <!doctype html>
 <html lang="pt">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Man Chat — Perfil</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Perfil</title>
+<link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header class="topbar">
-    <div class="left"><a href="chat.html" class="link">Mensagens</a></div>
-    <div class="center">Perfil</div>
-    <div class="right"><a href="index.html" class="link">Início</a></div>
-  </header>
+<div class="container center">
+  <h2>Perfil</h2>
+  <input id="nameInput" placeholder="Nome de exibição" />
+  <input type="file" id="photoInput" />
+  <button id="saveBtn" class="btn blue">Salvar</button>
 
-  <main class="container">
-    <div class="card">
-      <h2>O meu Perfil</h2>
-      <div class="profileRow">
-        <img id="profileImg" class="profilePic" src="avatar-placeholder.png" alt="avatar" />
-        <div>
-          <input id="displayName" type="text" placeholder="Nome" />
-          <input id="photoFile" type="file" />
-          <div class="row">
-            <button id="saveProfile" class="btn blue">Guardar</button>
-            <button id="backChat" class="btn">Voltar</button>
-          </div>
-        </div>
-      </div>
+  <div id="teamVerifyArea">
+    <input id="teamCodeInput" placeholder="Código da equipa" />
+    <button id="verifyTeamBtn" class="btn green">Validar Código</button>
+  </div>
 
-      <p class="muted">Email: <span id="profileEmail"></span></p>
-    </div>
-  </main>
+  <button id="logoutBtn" class="btn red">Sair</button>
+  <p id="msg"></p>
+</div>
 
-  <script type="module" src="app.js"></script>
-  <script type="module">
-    import { profileActions, authActions } from './app.js';
+<script type="module">
+import { authActions, profileActions } from './app.js';
 
-    // Só quem está logado pode aceder
-    authActions.requireAuthRedirect('login.html');
+authActions.requireAuthRedirect();
 
-    // Carregar dados do perfil
-    profileActions.getProfile().then(user => {
-      if (!user) return;
-      document.getElementById('displayName').value = user.displayName || '';
-      document.getElementById('profileEmail').textContent = user.email || '';
-      document.getElementById('profileImg').src = user.photoURL || 'avatar-placeholder.png';
-    });
+const nameInput=document.getElementById('nameInput');
+const photoInput=document.getElementById('photoInput');
+const msg=document.getElementById('msg');
 
-    document.getElementById('saveProfile').onclick = async () => {
-      const name = document.getElementById('displayName').value.trim();
-      const file = document.getElementById('photoFile').files[0];
-      await profileActions.updateProfile({ displayName: name, photoFile: file });
-      alert('Perfil atualizado!');
-      // atualizar preview
-      const u = await profileActions.getProfile();
-      document.getElementById('profileImg').src = u.photoURL || 'avatar-placeholder.png';
-    };
+(async ()=>{
+  const data = await profileActions.getProfile();
+  if(data) nameInput.value = data.displayName || '';
+})();
 
-    document.getElementById('backChat').onclick = () => location.href = 'chat.html';
-  </script>
+document.getElementById('saveBtn').onclick=async ()=>{
+  try{
+    const file = photoInput.files[0];
+    await profileActions.updateProfile({ displayName:nameInput.value, photoFile:file });
+    msg.innerText='Perfil atualizado!';
+  }catch(e){ msg.innerText=e.message; }
+};
+
+document.getElementById('verifyTeamBtn').onclick=async ()=>{
+  const code=document.getElementById('teamCodeInput').value.trim();
+  if(!code) return alert('Insira o código');
+  try{ await profileActions.verifyTeamCode(code); alert('Código validado!'); location.href='chat.html'; }
+  catch(e){ alert(e.message); }
+};
+
+document.getElementById('logoutBtn').onclick=()=>authActions.logout();
+</script>
 </body>
 </html>
