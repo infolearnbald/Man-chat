@@ -11,22 +11,13 @@ const ASSETS = [
   '/manifest.json'
 ];
 
-// install
 self.addEventListener('install', evt => {
-  evt.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
-  );
+  evt.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)));
   self.skipWaiting();
 });
 
-// activate
-self.addEventListener('activate', evt => {
-  evt.waitUntil(self.clients.claim());
-});
+self.addEventListener('activate', evt => evt.waitUntil(self.clients.claim()));
 
-// fetch
 self.addEventListener('fetch', evt => {
-  evt.respondWith(
-    caches.match(evt.request).then(resp => resp || fetch(evt.request))
-  );
+  evt.respondWith(caches.match(evt.request).then(resp => resp || fetch(evt.request)));
 });
