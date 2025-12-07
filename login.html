@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Man Chat — Login</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="card auth-card">
+      <h2>Entrar</h2>
+
+      <input id="email" type="email" placeholder="Email" />
+      <input id="password" type="password" placeholder="Senha" />
+
+      <button id="loginBtn" class="btn green">Entrar</button>
+      <button id="toSignup" class="btn blue">Criar Conta</button>
+      <button id="resetPwd" class="btn orange">Recuperar Senha</button>
+
+      <p class="muted">Voltar ao <a href="index.html">Início</a></p>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+  <script type="module">
+    import { authActions } from './app.js';
+
+    // Redirecionamentos / eventos
+    document.getElementById('toSignup').onclick = () => location.href = 'signup.html';
+    document.getElementById('loginBtn').onclick = () => {
+      const email = document.getElementById('email').value.trim();
+      const pass = document.getElementById('password').value;
+      authActions.login(email, pass);
+    };
+    document.getElementById('resetPwd').onclick = () => {
+      const email = prompt('Digite seu email para recuperar a senha:');
+      if (email) authActions.resetPassword(email);
+    };
+
+    // Se já está logado: ir direto para chat
+    authActions.onAuthChange(user => {
+      if (user) location.href = 'chat.html';
+    });
+  </script>
+</body>
+</html>

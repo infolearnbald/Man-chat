@@ -1,29 +1,86 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MAN Chat</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Man Chat — Mensagens</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <div class="center-box chat-container">
-        <div class="chat-header" style="margin-bottom:12px;">
-            <strong id="me-email"></strong>
-            <button id="btn-logout" style="float:right;">Sair</button>
-        </div>
-        <div class="messages" id="messages"></div>
-
-        <div class="chat-input">
-            <input type="text" id="msg-input" placeholder="Escreve uma mensagem...">
-            <button class="send-btn" id="send-btn">Enviar</button>
-        </div>
-        <div style="margin-top:8px;">
-            <button id="btn-file">Enviar arquivo</button>
-            <input type="file" id="file-input" hidden>
-        </div>
+  <header class="topbar">
+    <div class="left">
+      <a href="index.html" class="link">Início</a>
     </div>
+    <div class="center">Mensagens Coletivas</div>
+    <div class="right">
+      <a href="profile.html" class="link">Perfil</a>
+      <button id="logout" class="btn small red">Sair</button>
+    </div>
+  </header>
 
-    <script type="module" src="app.js"></script>
+  <main class="container chat-container">
+    <section id="chatBox" class="card chat-box"></section>
+
+    <div class="card input-area">
+      <input id="messageInput" type="text" placeholder="Escreve algo..." />
+      <div class="row">
+        <button id="sendBtn" class="btn green">Enviar</button>
+        <button id="fileBtn" class="btn blue">Enviar Arquivo</button>
+        <input id="fileInput" type="file" class="hidden" />
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="app.js"></script>
+  <script type="module">
+    import { chatActions, authActions } from './app.js';
+
+    // Proteção: se não autenticado, redireciona para login
+    authActions.requireAuthRedirect('login.html');
+
+    // Eventos
+    document.getElementById('logout').onclick = () => authActions.logout();
+    document.getElementById('sendBtn').onclick = async () => {
+      const text = document.getElementById('messageInput').value.trim();
+      if (!text) return;
+      await chatActions.sendText(text);
+      document.getElementById('messageInput').value = '';
+    };
+
+    document.getElementById('fileBtn').onclick = () => document.getElementById('fileInput').click();
+    document.getElementById('fileInput').onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      await chatActions.sendFile(file);
+      e.target.value = '';
+    };
+
+    // Carrega mensagens em tempo real
+    chatActions.onMessages(updateUI);
+
+    function updateUI(messages) {
+      const box = document.getElementById('chatBox');
+      box.innerHTML = '';
+      messages.forEach(m => {
+        const el = document.createElement('div');
+        el.className = 'msgRow';
+        el.innerHTML = `
+          <img class="avatar" src="${m.photoURL || 'avatar-placeholder.png'}" alt="avatar" />
+          <div class="msgCard ${m.isMe ? 'me' : 'other'}">
+            <div class="msgMeta"><strong>${escapeHtml(m.displayName || m.email)}</strong> <span class="time">${new Date(m.time).toLocaleString()}</span></div>
+            <div class="msgBody">${m.file ? `<a href="${m.file}" target="_blank">📎 ${escapeHtml(m.fileName || 'Arquivo')}</a>` : escapeHtml(m.text)}</div>
+          </div>
+        `;
+        box.appendChild(el);
+      });
+      box.scrollTop = box.scrollHeight;
+    }
+
+    // util
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>"'`=\/]/g, s => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','/':'&#x2F;','`':'&#96;','=':'&#61;' }[s]));
+    }
+  </script>
 </body>
 </html>
