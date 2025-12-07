@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Man Chat — Perfil</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="left"><a href="chat.html" class="link">Mensagens</a></div>
+    <div class="center">Perfil</div>
+    <div class="right"><a href="index.html" class="link">Início</a></div>
+  </header>
+
+  <main class="container">
+    <div class="card">
+      <h2>O meu Perfil</h2>
+      <div class="profileRow">
+        <img id="profileImg" class="profilePic" src="avatar-placeholder.png" alt="avatar" />
+        <div>
+          <input id="displayName" type="text" placeholder="Nome" />
+          <input id="photoFile" type="file" />
+          <div class="row">
+            <button id="saveProfile" class="btn blue">Guardar</button>
+            <button id="backChat" class="btn">Voltar</button>
+          </div>
+        </div>
+      </div>
+
+      <p class="muted">Email: <span id="profileEmail"></span></p>
+    </div>
+  </main>
+
+  <script type="module" src="app.js"></script>
+  <script type="module">
+    import { profileActions, authActions } from './app.js';
+
+    // Só quem está logado pode aceder
+    authActions.requireAuthRedirect('login.html');
+
+    // Carregar dados do perfil
+    profileActions.getProfile().then(user => {
+      if (!user) return;
+      document.getElementById('displayName').value = user.displayName || '';
+      document.getElementById('profileEmail').textContent = user.email || '';
+      document.getElementById('profileImg').src = user.photoURL || 'avatar-placeholder.png';
+    });
+
+    document.getElementById('saveProfile').onclick = async () => {
+      const name = document.getElementById('displayName').value.trim();
+      const file = document.getElementById('photoFile').files[0];
+      await profileActions.updateProfile({ displayName: name, photoFile: file });
+      alert('Perfil atualizado!');
+      // atualizar preview
+      const u = await profileActions.getProfile();
+      document.getElementById('profileImg').src = u.photoURL || 'avatar-placeholder.png';
+    };
+
+    document.getElementById('backChat').onclick = () => location.href = 'chat.html';
+  </script>
+</body>
+</html>
