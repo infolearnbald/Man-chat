@@ -4,22 +4,20 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Man Chat — Início</title>
-<link rel="manifest" href="/manifest.json" />
+<link rel="manifest" href="manifest.json" />
 <meta name="theme-color" content="#4CAF50" />
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 <div class="container center">
   <h1>Man Chat</h1>
-  <p>Bem-vindo ao chat privado da equipa. Usa os links abaixo.</p>
-
+  <p>Bem-vindo ao chat privado da equipa de programadores.</p>
   <nav class="menu">
     <a href="login.html" class="btn">Entrar</a>
     <a href="signup.html" class="btn blue">Criar Conta</a>
     <a href="chat.html" class="btn green">Mensagens</a>
     <a href="profile.html" class="btn">Perfil</a>
   </nav>
-
   <div style="margin-top:16px;">
     <button id="installBtn" class="btn">Instalar App</button>
   </div>
@@ -33,13 +31,11 @@ if('serviceWorker' in navigator){
 let deferredPrompt;
 const installBtn = document.getElementById('installBtn');
 installBtn.style.display='none';
-
 window.addEventListener('beforeinstallprompt', (e)=>{
   e.preventDefault();
   deferredPrompt = e;
   installBtn.style.display='inline-block';
 });
-
 installBtn.addEventListener('click', async ()=>{
   if(!deferredPrompt) return;
   deferredPrompt.prompt();
