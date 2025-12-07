@@ -1,7 +1,5 @@
-// app.js
-// Módulo central: inicializa Firebase e exporta ações reutilizáveis.
-// Usa ES modules — carregar em <script type="module" src="app.js"></script> nas páginas.
-
+// app.js (ATUALIZADO: validação team code + PWA friendly)
+// Import libs
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import {
   getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
@@ -10,17 +8,14 @@ import {
 
 import {
   getFirestore, doc, setDoc, getDoc, collection, addDoc,
-  query, orderBy, onSnapshot, serverTimestamp
+  query, where, orderBy, onSnapshot, serverTimestamp, getDocs, limit
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 import {
   getStorage, ref, uploadBytes, getDownloadURL
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-/* ---------------------------
-   CONFIGURAÇÃO DO FIREBASE
-   (usa a tua config que enviaste)
----------------------------- */
+/* FIREBASE CONFIG (usa a tua config) */
 const firebaseConfig = {
   apiKey: "AIzaSyAQDWD507uCjjbhFJUfSPJBGnZxAWDWcsY",
   authDomain: "man-chat-a09aa.firebaseapp.com",
@@ -35,30 +30,47 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-/* ---------- UTILIDADES ---------- */
+/* ---------- HELPERS ---------- */
 function safeGet(obj, key, fallback=''){ try{return obj?.[key] ?? fallback}catch(e){return fallback} }
 
-/* ---------- AÇÕES DE AUTENTICAÇÃO ---------- */
+/* ---------- AUTH ACTIONS ---------- */
 const authActions = {
+  // login
   login: async (email, password) => {
     if(!email || !password) return alert('Email e senha são obrigatórios.');
     try{ await signInWithEmailAndPassword(auth, email, password); }
     catch(e){ alert('Erro: ' + e.message); throw e; }
   },
 
-  signup: async (displayName, email, password) => {
-    if(!displayName || !email || !password) throw new Error('Campos inválidos');
+  // signup com validação de team code
+  signup: async (displayName, email, password, teamCode) => {
+    if(!displayName || !email || !password || !teamCode) throw new Error('Todos os campos, incluindo o código da equipa, são obrigatórios.');
+
+    // verificar teamCode na colecção teams (campo code)
+    const teamsRef = collection(db, 'teams');
+    const q = query(teamsRef, where('code', '==', teamCode), limit(1));
+    const snaps = await getDocs(q);
+
+    const teamIsValid = !snaps.empty;
+    if(!teamIsValid) throw new Error('Código da equipa inválido.');
+
+    // criar user
     const cred = await createUserWithEmailAndPassword(auth, email, password);
-    // Atualiza displayName no Auth
+
+    // atualizar displayName no auth
     await updateProfile(cred.user, { displayName });
-    // Cria documento do usuário em users/{uid}
+
+    // criar documento do user com teamVerified = true
     await setDoc(doc(db, 'users', cred.user.uid), {
       uid: cred.user.uid,
       email: cred.user.email,
       displayName,
       photoURL: null,
+      teamVerified: true,
+      teamCode,
       createdAt: serverTimestamp()
     });
+
     return cred.user;
   },
 
@@ -74,24 +86,32 @@ const authActions = {
 
   onAuthChange: (cb) => onAuthStateChanged(auth, cb),
 
-  // Redireciona para pagina de login se não houver user, ou para destino se houver
   requireAuthRedirect: (loginPage = 'login.html') => {
     onAuthStateChanged(auth, user => {
       if (!user) location.href = loginPage;
     });
   },
 
-  // Obter utilizador atual (camada adicional)
+  // redirect to profile if not teamVerified
+  requireTeamVerifiedRedirect: async (redirectTo='profile.html', loginPage='login.html') => {
+    onAuthStateChanged(auth, async (user) => {
+      if(!user) { location.href = loginPage; return; }
+      const snap = await getDoc(doc(db, 'users', user.uid));
+      const data = snap.exists() ? snap.data() : null;
+      if(!data || !data.teamVerified) location.href = redirectTo;
+    });
+  },
+
   currentUser: () => auth.currentUser || null
 };
 
-/* ---------- AÇÕES DE PERFIL ---------- */
+/* ---------- PROFILE ACTIONS ---------- */
 const profileActions = {
   getProfile: async () => {
     const u = auth.currentUser;
     if(!u) return null;
     const snap = await getDoc(doc(db, 'users', u.uid));
-    const data = snap.exists() ? snap.data() : { uid: u.uid, email: u.email, displayName: u.displayName, photoURL: u.photoURL || null };
+    const data = snap.exists() ? snap.data() : { uid: u.uid, email: u.email, displayName: u.displayName, photoURL: u.photoURL || null, teamVerified: false };
     return data;
   },
 
@@ -107,13 +127,11 @@ const profileActions = {
       photoURL = await getDownloadURL(storageRef);
     }
 
-    // Atualiza auth profile
     const upd = {};
     if(displayName) upd.displayName = displayName;
     if(photoURL) upd.photoURL = photoURL;
-    if(Object.keys(upd).length) await updateProfile(u, upd);
+    if(Object.keys(upd).length) await updateProfile(u, upd); // atualiza auth
 
-    // Atualiza Firestore users doc
     const userDoc = {
       uid: u.uid,
       email: u.email,
@@ -124,17 +142,30 @@ const profileActions = {
     await setDoc(doc(db, 'users', u.uid), userDoc, { merge: true });
 
     return userDoc;
+  },
+
+  // verificar team code depois do sign-up (caso user precise)
+  verifyTeamCode: async (code) => {
+    const u = auth.currentUser;
+    if(!u) throw new Error('Login necessário.');
+    if(!code) throw new Error('Código inválido.');
+    const teamsRef = collection(db, 'teams');
+    const q = query(teamsRef, where('code', '==', code), limit(1));
+    const snaps = await getDocs(q);
+    if(snaps.empty) throw new Error('Código inválido.');
+    await setDoc(doc(db, 'users', u.uid), { teamVerified: true, teamCode: code }, { merge: true });
+    return true;
   }
 };
 
-/* ---------- AÇÕES DE CHAT ---------- */
+/* ---------- CHAT ACTIONS ---------- */
 const chatActions = {
-  // envia mensagem de texto
   sendText: async (text) => {
     const u = auth.currentUser;
     if(!u) throw new Error('Login necessário');
-    const userDocSnap = await getDoc(doc(db, 'users', u.uid));
-    const userData = userDocSnap.exists() ? userDocSnap.data() : { displayName: u.displayName, email: u.email, photoURL: u.photoURL };
+    const userSnap = await getDoc(doc(db, 'users', u.uid));
+    const userData = userSnap.exists() ? userSnap.data() : { displayName: u.displayName, email: u.email, photoURL: u.photoURL };
+    if(!userData.teamVerified) throw new Error('Acesso ao chat negado: utilizador não verificado na equipa.');
     await addDoc(collection(db, 'messages'), {
       text,
       uid: u.uid,
@@ -145,16 +176,18 @@ const chatActions = {
     });
   },
 
-  // envia ficheiro (upload + mensagem com link)
   sendFile: async (file) => {
     const u = auth.currentUser;
     if(!u) throw new Error('Login necessário');
+    const userSnap = await getDoc(doc(db, 'users', u.uid));
+    const userData = userSnap.exists() ? userSnap.data() : { displayName: u.displayName, email: u.email, photoURL: u.photoURL };
+    if(!userData.teamVerified) throw new Error('Acesso ao chat negado: utilizador não verificado na equipa.');
+
     const ext = file.name.split('.').pop();
     const fileRef = ref(storage, `files/${u.uid}_${Date.now()}.${ext}`);
     await uploadBytes(fileRef, file);
     const url = await getDownloadURL(fileRef);
-    const userDocSnap = await getDoc(doc(db, 'users', u.uid));
-    const userData = userDocSnap.exists() ? userDocSnap.data() : { displayName: u.displayName, email: u.email, photoURL: u.photoURL };
+
     await addDoc(collection(db, 'messages'), {
       file: url,
       fileName: file.name,
@@ -166,7 +199,7 @@ const chatActions = {
     });
   },
 
-  // ouve mensagens em tempo real — callback recebe array de mensagens ordenadas
+  // onMessages: devolve array de mensagens em tempo real (ordenadas)
   onMessages: (cb) => {
     const q = query(collection(db, 'messages'), orderBy('time'));
     return onSnapshot(q, snap => {
@@ -191,9 +224,5 @@ const chatActions = {
   }
 };
 
-/* ---------- EXPORTS (úteis para as páginas) ---------- */
+/* ---------- EXPORTS ---------- */
 export { authActions, profileActions, chatActions };
-
-/* ---------- exemplo de debug (opcional) ----------
-onAuthStateChanged(auth, u => console.log('Auth state changed', u && u.email));
--------------------------------------------------- */
