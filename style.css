@@ -1,130 +1,60 @@
-/* RESET GERAL */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: "Arial", sans-serif;
+:root{
+  --bg:#f5f5f5;
+  --card:#fff;
+  --accent:#4CAF50;
+  --muted:#666;
+}
+*{box-sizing:border-box}
+body{font-family:Inter,Arial,Helvetica,sans-serif;background:var(--bg);margin:0;color:#222}
+.container{max-width:900px;margin:20px auto;padding:0 16px}
+.center{text-align:center}
+.card{background:var(--card);padding:18px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.06);}
+
+.menu{display:flex;flex-direction:column;gap:10px;align-items:center;margin-top:12px}
+.menu .btn{width:220px}
+
+.auth-card{max-width:420px;margin:40px auto}
+
+input[type="text"],input[type="email"],input[type="password"],input[type="file"]{
+  width:100%;padding:10px;border-radius:8px;border:1px solid #ddd;margin-top:10px;
 }
 
-body {
-  background: #f0f2f5;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-}
+.btn{display:inline-block;padding:10px 14px;border-radius:8px;border:0;background:var(--accent);color:white;cursor:pointer}
+.btn.blue{background:#2196F3}
+.btn.orange{background:#FF9800}
+.btn.green{background:#4CAF50}
+.btn.red{background:#E53935}
+.btn.small{padding:6px 8px;font-size:13px}
+.link{color:inherit;text-decoration:none;padding:6px 10px;border-radius:6px}
 
-/* CONTAINERS DAS PÁGINAS */
-.container {
-  background: #fff;
-  width: 90%;
-  max-width: 400px;
-  padding: 25px;
-  border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-  text-align: center;
-}
+.muted{color:var(--muted);font-size:14px}
 
-.container h1,
-.container h2 {
-  margin-bottom: 20px;
-  color: #0a84ff;
-}
+/* Topbar */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:var(--accent);color:white}
+.topbar .link{color:white;text-decoration:underline}
 
-.container input {
-  width: 100%;
-  padding: 12px;
-  margin: 10px 0;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  outline: none;
-}
+/* Chat layout */
+.chat-container{display:flex;flex-direction:column;gap:12px}
+.chat-box{height:60vh;overflow:auto;padding:12px}
+.input-area{display:flex;flex-direction:column;gap:10px;padding:12px}
+.row{display:flex;gap:10px}
+.row .btn{flex:1}
 
-.container button,
-.container a {
-  display: block;
-  width: 100%;
-  padding: 12px;
-  margin-top: 15px;
-  background: #0a84ff;
-  color: white;
-  text-decoration: none;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-  transition: 0.3s;
-}
+/* Message item */
+.msgRow{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px}
+.avatar{width:44px;height:44px;border-radius:50%;object-fit:cover}
+.msgCard{background:#f0f0f0;padding:10px;border-radius:10px;max-width:85%}
+.msgCard.me{background:#dcf8c6;margin-left:auto}
+.msgMeta{font-size:12px;color:#333;margin-bottom:6px}
+.msgBody{white-space:pre-wrap;word-break:break-word}
+.time{color:var(--muted);font-size:11px;margin-left:8px}
 
-.container button:hover,
-.container a:hover {
-  background: #006edc;
-}
+/* Profile */
+.profileRow{display:flex;gap:16px;align-items:center}
+.profilePic{width:96px;height:96px;border-radius:50%;object-fit:cover;border:2px solid #eee}
 
-/* ÁREA DO CHAT */
-#messages {
-  width: 100%;
-  height: 80vh;
-  max-width: 500px;
-  padding: 15px;
-  overflow-y: auto;
-  border-radius: 8px;
-  background: white;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+/* Responsive */
+@media (max-width:700px){
+  .container{padding:10px}
+  .chat-box{height:55vh}
 }
-
-#messages p {
-  background: #e5f1ff;
-  padding: 10px;
-  margin: 8px 0;
-  display: inline-block;
-  border-radius: 10px;
-  max-width: 80%;
-}
-
-#messages a {
-  display: block;
-  margin: 8px 0;
-  color: #0a84ff;
-  font-weight: bold;
-}
-
-/* INPUT DE MENSAGEM */
-.input-area {
-  width: 100%;
-  max-width: 500px;
-  display: flex;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.input-area input[type="text"],
-#msg {
-  flex: 1;
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-}
-
-#sendBtn {
-  background: #0a84ff;
-  color: white;
-  border: none;
-  padding: 12px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-#sendBtn:hover {
-  background: #006edc;
-}
-
-/* FILE INPUT */
-#fileUploader {
-  background: #fff;
-  border-radius: 8px;
-  padding: 8px;
-  font-size: 14px;
-}
-
