@@ -1,44 +1,40 @@
 <!doctype html>
 <html lang="pt">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Man Chat — Criar Conta</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Criar Conta</title>
+<link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="container">
-    <div class="card auth-card">
-      <h2>Criar Conta</h2>
+<div class="container center">
+  <h2>Criar Conta</h2>
+  <input id="regName" placeholder="Nome de exibição" />
+  <input id="regEmail" type="email" placeholder="Email" />
+  <input id="regPass" type="password" placeholder="Senha" />
+  <input id="regTeamCode" placeholder="Código da equipa (obrigatório)" />
+  <button id="signupBtn" class="btn blue">Criar Conta</button>
+  <p id="msg"></p>
+  <a href="login.html">Já tens conta? Entrar</a>
+</div>
 
-      <input id="regName" type="text" placeholder="Nome (ex: Joaquim)" />
-      <input id="regEmail" type="email" placeholder="Email" />
-      <input id="regPassword" type="password" placeholder="Senha (min. 6 chars)" />
+<script type="module">
+import { authActions } from './app.js';
 
-      <button id="signupBtn" class="btn blue">Registrar</button>
-      <button id="toLogin" class="btn">Já tenho conta</button>
+const btn = document.getElementById('signupBtn');
+const msg = document.getElementById('msg');
 
-      <p class="muted">Voltar ao <a href="index.html">Início</a></p>
-    </div>
-  </div>
-
-  <script type="module" src="app.js"></script>
-  <script type="module">
-    import { authActions } from './app.js';
-
-    document.getElementById('toLogin').onclick = () => location.href = 'login.html';
-    document.getElementById('signupBtn').onclick = () => {
-      const name = document.getElementById('regName').value.trim();
-      const email = document.getElementById('regEmail').value.trim();
-      const pass = document.getElementById('regPassword').value;
-      if (!name) return alert('Insere o teu nome.');
-      authActions.signup(name, email, pass)
-        .then(() => {
-          alert('Conta criada! Serás redirecionado para o chat.');
-          location.href = 'chat.html';
-        })
-        .catch(err => alert(err.message));
-    };
-  </script>
+btn.onclick = async ()=>{
+  const name=document.getElementById('regName').value.trim();
+  const email=document.getElementById('regEmail').value.trim();
+  const pass=document.getElementById('regPass').value;
+  const code=document.getElementById('regTeamCode').value.trim();
+  try{
+    await authActions.signup(name,email,pass,code);
+    msg.innerText='Conta criada com sucesso! Redirecionando...';
+    setTimeout(()=>location.href='chat.html',1000);
+  }catch(e){ msg.innerText=e.message; }
+};
+</script>
 </body>
 </html>
