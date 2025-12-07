@@ -1,16 +1,26 @@
-const ACCESS_CODE = "MAN001";
+// app.js
+// Módulo central: inicializa Firebase e exporta ações reutilizáveis.
+// Usa ES modules — carregar em <script type="module" src="app.js"></script> nas páginas.
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import {
-  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-import {
-  getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, setDoc
-} from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-import {
-  getStorage, ref as sref, uploadBytes, getDownloadURL
-} from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
+  getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+  sendPasswordResetEmail, signOut, onAuthStateChanged, updateProfile
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+import {
+  getFirestore, doc, setDoc, getDoc, collection, addDoc,
+  query, orderBy, onSnapshot, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+import {
+  getStorage, ref, uploadBytes, getDownloadURL
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+
+/* ---------------------------
+   CONFIGURAÇÃO DO FIREBASE
+   (usa a tua config que enviaste)
+---------------------------- */
 const firebaseConfig = {
   apiKey: "AIzaSyAQDWD507uCjjbhFJUfSPJBGnZxAWDWcsY",
   authDomain: "man-chat-a09aa.firebaseapp.com",
@@ -25,115 +35,165 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-function msgStatus(text, err=false){
-    const status = document.getElementById("status");
-    if(!status) return;
-    status.textContent = text;
-    status.style.color = err?"#b00":"#0f0";
-    if(text) setTimeout(()=> status.textContent="",4000);
-}
+/* ---------- UTILIDADES ---------- */
+function safeGet(obj, key, fallback=''){ try{return obj?.[key] ?? fallback}catch(e){return fallback} }
 
-// Registro
-const regBtn = document.getElementById("btn-register");
-if(regBtn){
-    regBtn.onclick = async () => {
-        const email = document.getElementById("reg-email").value;
-        const pass = document.getElementById("reg-pass").value;
-        const code = document.getElementById("reg-code").value;
+/* ---------- AÇÕES DE AUTENTICAÇÃO ---------- */
+const authActions = {
+  login: async (email, password) => {
+    if(!email || !password) return alert('Email e senha são obrigatórios.');
+    try{ await signInWithEmailAndPassword(auth, email, password); }
+    catch(e){ alert('Erro: ' + e.message); throw e; }
+  },
 
-        if(code !== ACCESS_CODE) return msgStatus("Código inválido",true);
-
-        try{
-            const user = await createUserWithEmailAndPassword(auth,email,pass);
-            await setDoc(doc(db,"users",user.user.uid),{
-                email: email,
-                code: code,
-                createdAt: serverTimestamp()
-            });
-            msgStatus("Conta criada!");
-        }catch(e){ msgStatus(e.message,true);}
-    }
-}
-
-// Login
-const loginBtn = document.getElementById("btn-login");
-if(loginBtn){
-    loginBtn.onclick = async () => {
-        const email = document.getElementById("login-email").value;
-        const pass = document.getElementById("login-pass").value;
-        const code = document.getElementById("login-code").value;
-
-        if(code !== ACCESS_CODE) return msgStatus("Código inválido",true);
-
-        try{ await signInWithEmailAndPassword(auth,email,pass);}
-        catch(e){ msgStatus(e.message,true);}
-    }
-}
-
-// Logout
-const logoutBtn = document.getElementById("btn-logout");
-if(logoutBtn) logoutBtn.onclick = ()=>signOut(auth);
-
-// Monitor Auth
-onAuthStateChanged(auth,user=>{
-    if(user && window.location.pathname.includes("index.html") || window.location.pathname.includes("register.html")){
-        window.location.href = "chat.html";
-    }
-});
-
-// Chat
-const sendBtn = document.getElementById("send-btn");
-if(sendBtn){
-    sendBtn.onclick = async ()=>{
-        const input = document.getElementById("msg-input");
-        if(!input.value) return;
-        await addDoc(collection(db,"messages"),{
-            type:"text",
-            text: input.value,
-            email: auth.currentUser.email,
-            timestamp: serverTimestamp()
-        });
-        input.value="";
-    }
-}
-
-// File Upload
-const fileBtn = document.getElementById("btn-file");
-const fileInput = document.getElementById("file-input");
-if(fileBtn && fileInput){
-    fileBtn.onclick = ()=> fileInput.click();
-    fileInput.onchange = async (e)=>{
-        const file = e.target.files[0];
-        if(!file) return;
-        const path = "uploads/"+Date.now()+"-"+file.name;
-        const ref = sref(storage,path);
-        await uploadBytes(ref,file);
-        const url = await getDownloadURL(ref);
-        await addDoc(collection(db,"messages"),{
-            type:"file",
-            fileName:file.name,
-            fileUrl:url,
-            email: auth.currentUser.email,
-            timestamp: serverTimestamp()
-        });
-    }
-}
-
-// Listen messages
-const messagesDiv = document.getElementById("messages");
-if(messagesDiv){
-    const q = query(collection(db,"messages"),orderBy("timestamp"));
-    onSnapshot(q,snap=>{
-        messagesDiv.innerHTML="";
-        snap.forEach(doc=>{
-            const m = doc.data();
-            const div = document.createElement("div");
-            div.className="message "+(m.email===auth.currentUser.email?"me":"other");
-            if(m.type==="text") div.textContent = m.email+": "+m.text;
-            else div.innerHTML = m.email+": <a href='"+m.fileUrl+"' target='_blank'>📎 "+m.fileName+"</a>";
-            messagesDiv.appendChild(div);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        });
+  signup: async (displayName, email, password) => {
+    if(!displayName || !email || !password) throw new Error('Campos inválidos');
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    // Atualiza displayName no Auth
+    await updateProfile(cred.user, { displayName });
+    // Cria documento do usuário em users/{uid}
+    await setDoc(doc(db, 'users', cred.user.uid), {
+      uid: cred.user.uid,
+      email: cred.user.email,
+      displayName,
+      photoURL: null,
+      createdAt: serverTimestamp()
     });
-}
+    return cred.user;
+  },
 
+  resetPassword: async (email) => {
+    try{ await sendPasswordResetEmail(auth, email); alert('Email de recuperação enviado.'); }
+    catch(e){ alert('Erro: ' + e.message); }
+  },
+
+  logout: async () => {
+    await signOut(auth);
+    location.href = 'login.html';
+  },
+
+  onAuthChange: (cb) => onAuthStateChanged(auth, cb),
+
+  // Redireciona para pagina de login se não houver user, ou para destino se houver
+  requireAuthRedirect: (loginPage = 'login.html') => {
+    onAuthStateChanged(auth, user => {
+      if (!user) location.href = loginPage;
+    });
+  },
+
+  // Obter utilizador atual (camada adicional)
+  currentUser: () => auth.currentUser || null
+};
+
+/* ---------- AÇÕES DE PERFIL ---------- */
+const profileActions = {
+  getProfile: async () => {
+    const u = auth.currentUser;
+    if(!u) return null;
+    const snap = await getDoc(doc(db, 'users', u.uid));
+    const data = snap.exists() ? snap.data() : { uid: u.uid, email: u.email, displayName: u.displayName, photoURL: u.photoURL || null };
+    return data;
+  },
+
+  updateProfile: async ({ displayName, photoFile }) => {
+    const u = auth.currentUser;
+    if(!u) throw new Error('Usuário não autenticado.');
+    let photoURL = null;
+
+    if(photoFile){
+      const ext = photoFile.name.split('.').pop();
+      const storageRef = ref(storage, `profiles/${u.uid}.${ext}`);
+      await uploadBytes(storageRef, photoFile);
+      photoURL = await getDownloadURL(storageRef);
+    }
+
+    // Atualiza auth profile
+    const upd = {};
+    if(displayName) upd.displayName = displayName;
+    if(photoURL) upd.photoURL = photoURL;
+    if(Object.keys(upd).length) await updateProfile(u, upd);
+
+    // Atualiza Firestore users doc
+    const userDoc = {
+      uid: u.uid,
+      email: u.email,
+      displayName: displayName || u.displayName || '',
+      photoURL: photoURL || safeGet((await getDoc(doc(db,'users',u.uid))).data(), 'photoURL', null),
+      updatedAt: serverTimestamp()
+    };
+    await setDoc(doc(db, 'users', u.uid), userDoc, { merge: true });
+
+    return userDoc;
+  }
+};
+
+/* ---------- AÇÕES DE CHAT ---------- */
+const chatActions = {
+  // envia mensagem de texto
+  sendText: async (text) => {
+    const u = auth.currentUser;
+    if(!u) throw new Error('Login necessário');
+    const userDocSnap = await getDoc(doc(db, 'users', u.uid));
+    const userData = userDocSnap.exists() ? userDocSnap.data() : { displayName: u.displayName, email: u.email, photoURL: u.photoURL };
+    await addDoc(collection(db, 'messages'), {
+      text,
+      uid: u.uid,
+      displayName: userData.displayName || u.email,
+      email: u.email,
+      photoURL: userData.photoURL || null,
+      time: Date.now()
+    });
+  },
+
+  // envia ficheiro (upload + mensagem com link)
+  sendFile: async (file) => {
+    const u = auth.currentUser;
+    if(!u) throw new Error('Login necessário');
+    const ext = file.name.split('.').pop();
+    const fileRef = ref(storage, `files/${u.uid}_${Date.now()}.${ext}`);
+    await uploadBytes(fileRef, file);
+    const url = await getDownloadURL(fileRef);
+    const userDocSnap = await getDoc(doc(db, 'users', u.uid));
+    const userData = userDocSnap.exists() ? userDocSnap.data() : { displayName: u.displayName, email: u.email, photoURL: u.photoURL };
+    await addDoc(collection(db, 'messages'), {
+      file: url,
+      fileName: file.name,
+      uid: u.uid,
+      displayName: userData.displayName || u.email,
+      email: u.email,
+      photoURL: userData.photoURL || null,
+      time: Date.now()
+    });
+  },
+
+  // ouve mensagens em tempo real — callback recebe array de mensagens ordenadas
+  onMessages: (cb) => {
+    const q = query(collection(db, 'messages'), orderBy('time'));
+    return onSnapshot(q, snap => {
+      const msgs = [];
+      snap.forEach(d => {
+        const data = d.data();
+        msgs.push({
+          id: d.id,
+          text: data.text || null,
+          file: data.file || null,
+          fileName: data.fileName || null,
+          uid: data.uid,
+          displayName: data.displayName,
+          email: data.email,
+          photoURL: data.photoURL,
+          time: data.time || 0,
+          isMe: auth.currentUser ? (data.uid === auth.currentUser.uid) : false
+        });
+      });
+      cb(msgs);
+    });
+  }
+};
+
+/* ---------- EXPORTS (úteis para as páginas) ---------- */
+export { authActions, profileActions, chatActions };
+
+/* ---------- exemplo de debug (opcional) ----------
+onAuthStateChanged(auth, u => console.log('Auth state changed', u && u.email));
+-------------------------------------------------- */
