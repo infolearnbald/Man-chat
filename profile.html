@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meu Perfil</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="center-box">
+<h2>Atualizar Codename</h2>
+<input id="newCodename" placeholder="Novo codename">
+<button onclick="saveName()">Salvar</button>
+</div>
+
+<script>
+function saveName(){
+    let name = document.getElementById('newCodename').value.trim();
+    if(name.length<2){ alert('Codename curto.'); return; }
+    localStorage.setItem('codename', name);
+    alert('Atualizado!');
+    window.location = 'chat.html';
+}
+</script>
+</body>
+</html>
