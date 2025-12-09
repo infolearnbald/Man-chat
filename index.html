@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<title>DarkChat</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
+<script src="firebase.js"></script>
+</head>
+
+<body>
+
+<div class="center-box">
+
+<h1>DARKCHAT</h1>
+
+<label>Codename</label>
+<input id="codenameInput" type="text">
+
+<label>Código de Equipa</label>
+<input id="teamcodeInput" type="password">
+
+<button onclick="enterChat()">Entrar</button>
+
+</div>
+
+<script>
+function enterChat() {
+    let code = document.getElementById("teamcodeInput").value.trim();
+    let name = document.getElementById("codenameInput").value.trim();
+
+    if (code !== "MAN2020") {
+        alert("Código inválido.");
+        return;
+    }
+
+    if (name.length < 2) {
+        alert("O codename deve ter pelo menos 2 letras.");
+        return;
+    }
+
+    localStorage.setItem("codename", name);
+
+    auth.signInAnonymously().then(() => {
+        window.location = "chat.html";
+    });
+}
+</script>
+
+</body>
+</html>
