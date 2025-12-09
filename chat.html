@@ -2,7 +2,7 @@
 <html lang="pt">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DarkChat – MAN2020</title>
 <link rel="stylesheet" href="style.css">
 
@@ -10,28 +10,27 @@
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
+
 <script src="firebase.js"></script>
 <script src="script.js"></script>
 </head>
 
 <body>
-
 <div class="chat-container">
-  <div class="chat-header">
-    <h1>MAN2020</h1>
-    <div id="userBadge"></div>
-    <button onclick="logout()">Sair</button>
-  </div>
-  
-  <div id="messagesBox" class="messages"></div>
-  
-  <div class="send-area">
-    <input id="msgInput" placeholder="Mensagem..." type="text">
-    <input id="fileInput" type="file" style="display:none" onchange="sendFile(this.files)">
-    <button onclick="sendMessage()">Enviar</button>
-    <button onclick="document.getElementById('fileInput').click()">📎</button>
-  </div>
-</div>
+    <div class="chat-header">
+        <h1>MAN2020</h1>
+        <div id="userBadge"></div>
+        <button onclick="logout()">Sair</button>
+    </div>
 
+    <div id="messagesBox" class="messages"></div>
+
+    <div class="send-area">
+        <input id="msgInput" type="text" placeholder="Mensagem...">
+        <input id="fileInput" type="file" style="display:none" onchange="sendFile(this.files)">
+        <button onclick="sendMessage()">Enviar</button>
+        <button onclick="document.getElementById('fileInput').click()">📎</button>
+    </div>
+</div>
 </body>
 </html>
