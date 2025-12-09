@@ -1,57 +1,68 @@
-const codename = localStorage.getItem("codename");
-if (!codename) window.location = "index.html";
+const codename = localStorage.getItem('codename');
+const team = localStorage.getItem('team');
+const uid = localStorage.getItem('uid');
 
-function sendMessage() {
-    let text = document.getElementById("msgInput").value.trim();
-    if (text === "") return;
-
-    db.collection("messages").add({
-        sender: codename,
-        text: text,
-        time: firebase.firestore.FieldValue.serverTimestamp(),
-        type: "text"
-    });
-
-    document.getElementById("msgInput").value = "";
+if(!codename || !team || !uid) {
+    window.location.href = 'index.html';
 }
 
-function sendFile(files) {
-    let file = files[0];
-    if (!file) return;
+document.getElementById('userBadge').textContent = `@${codename}`;
 
-    let ref = storage.ref("files/" + Date.now() + "_" + file.name);
-    ref.put(file).then(() => {
-        ref.getDownloadURL().then(url => {
-            db.collection("messages").add({
-                sender: codename,
-                fileUrl: url,
+function logout(){
+    localStorage.clear();
+    window.location.href = 'index.html';
+}
+
+// Enviar mensagem de texto
+function sendMessage(){
+    const msg = document.getElementById('msgInput').value.trim();
+    if(!msg) return;
+
+    db.collection('teams').doc(team).collection('messages').add({
+        senderName: codename,
+        senderUid: uid,
+        type: 'text',
+        text: msg,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    document.getElementById('msgInput').value = '';
+}
+
+// Enviar arquivo
+function sendFile(files){
+    const file = files[0];
+    if(!file) return;
+
+    const ref = storage.ref(`${team}/${Date.now()}_${file.name}`);
+    ref.put(file).then(snapshot=>{
+        snapshot.ref.getDownloadURL().then(url=>{
+            db.collection('teams').doc(team).collection('messages').add({
+                senderName: codename,
+                senderUid: uid,
+                type: 'file',
                 fileName: file.name,
-                time: firebase.firestore.FieldValue.serverTimestamp(),
-                type: "file"
+                fileUrl: url,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
         });
     });
 }
 
-db.collection("messages").orderBy("time")
-.onSnapshot(snapshot => {
-    let box = document.getElementById("messagesBox");
-    box.innerHTML = "";
-
-    snapshot.forEach(doc => {
-        let msg = doc.data();
-
-        let div = document.createElement("div");
-        div.className = "msg";
-
-        if (msg.type === "text") {
-            div.innerHTML = `<b>${msg.sender}:</b> ${msg.text}`;
+// Receber mensagens
+db.collection('teams').doc(team).collection('messages').orderBy('createdAt').onSnapshot(snapshot=>{
+    const box = document.getElementById('messagesBox');
+    box.innerHTML = '';
+    snapshot.forEach(doc=>{
+        const msg = doc.data();
+        const div = document.createElement('div');
+        div.className = 'msg';
+        if(msg.type==='text'){
+            div.innerHTML = `<b>${msg.senderName}:</b> ${msg.text}`;
         } else {
-            div.innerHTML = `<b>${msg.sender}:</b> <a href="${msg.fileUrl}" download>${msg.fileName}</a>`;
+            div.innerHTML = `<b>${msg.senderName}:</b> <a href="${msg.fileUrl}" target="_blank">${msg.fileName}</a>`;
         }
-
         box.appendChild(div);
     });
-
     box.scrollTop = box.scrollHeight;
 });
