@@ -2,67 +2,58 @@ const codename = localStorage.getItem('codename');
 const team = localStorage.getItem('team');
 const uid = localStorage.getItem('uid');
 
-if(!codename || !team || !uid) {
-    window.location.href = 'index.html';
-}
-
+if(!codename || !team || !uid) window.location.href='index.html';
 document.getElementById('userBadge').textContent = `@${codename}`;
 
 function logout(){
     localStorage.clear();
-    window.location.href = 'index.html';
+    window.location.href='index.html';
 }
 
-// Enviar mensagem de texto
 function sendMessage(){
     const msg = document.getElementById('msgInput').value.trim();
     if(!msg) return;
-
     db.collection('teams').doc(team).collection('messages').add({
         senderName: codename,
         senderUid: uid,
-        type: 'text',
-        text: msg,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        type:'text',
+        text:msg,
+        createdAt:firebase.firestore.FieldValue.serverTimestamp()
     });
-
-    document.getElementById('msgInput').value = '';
+    document.getElementById('msgInput').value='';
 }
 
-// Enviar arquivo
 function sendFile(files){
-    const file = files[0];
-    if(!file) return;
-
+    const file = files[0]; if(!file) return;
     const ref = storage.ref(`${team}/${Date.now()}_${file.name}`);
     ref.put(file).then(snapshot=>{
         snapshot.ref.getDownloadURL().then(url=>{
             db.collection('teams').doc(team).collection('messages').add({
                 senderName: codename,
                 senderUid: uid,
-                type: 'file',
-                fileName: file.name,
-                fileUrl: url,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                type:'file',
+                fileName:file.name,
+                fileUrl:url,
+                createdAt:firebase.firestore.FieldValue.serverTimestamp()
             });
         });
     });
 }
 
-// Receber mensagens
-db.collection('teams').doc(team).collection('messages').orderBy('createdAt').onSnapshot(snapshot=>{
+db.collection('teams').doc(team).collection('messages').orderBy('createdAt')
+.onSnapshot(snapshot=>{
     const box = document.getElementById('messagesBox');
-    box.innerHTML = '';
+    box.innerHTML='';
     snapshot.forEach(doc=>{
         const msg = doc.data();
-        const div = document.createElement('div');
-        div.className = 'msg';
+        const div=document.createElement('div');
+        div.className='msg';
         if(msg.type==='text'){
-            div.innerHTML = `<b>${msg.senderName}:</b> ${msg.text}`;
+            div.innerHTML=`<b>${msg.senderName}:</b> ${msg.text}`;
         } else {
-            div.innerHTML = `<b>${msg.senderName}:</b> <a href="${msg.fileUrl}" target="_blank">${msg.fileName}</a>`;
+            div.innerHTML=`<b>${msg.senderName}:</b> <a href="${msg.fileUrl}" target="_blank">${msg.fileName}</a>`;
         }
         box.appendChild(div);
     });
-    box.scrollTop = box.scrollHeight;
+    box.scrollTop=box.scrollHeight;
 });
