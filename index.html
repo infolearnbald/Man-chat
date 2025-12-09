@@ -2,6 +2,7 @@
 <html lang="pt">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>DarkChat</title>
 <link rel="stylesheet" href="style.css">
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
@@ -14,40 +15,46 @@
 <body>
 
 <div class="center-box">
-
-<h1>DARKCHAT</h1>
-
-<label>Codename</label>
-<input id="codenameInput" type="text">
-
-<label>Código de Equipa</label>
-<input id="teamcodeInput" type="password">
-
-<button onclick="enterChat()">Entrar</button>
-
+  <h1>DARKCHAT</h1>
+  
+  <label>Codename</label>
+  <input id="codenameInput" type="text" placeholder="Ex: TeuApelido">
+  
+  <label>Código de Equipa</label>
+  <input id="teamcodeInput" type="password" placeholder="Ex: MAN2020">
+  
+  <button id="enterBtn">Entrar</button>
+  
+  <div class="small-muted">Somente membros com código de equipe podem entrar</div>
 </div>
 
 <script>
-function enterChat() {
-    let code = document.getElementById("teamcodeInput").value.trim();
-    let name = document.getElementById("codenameInput").value.trim();
-
-    if (code !== "MAN2020") {
-        alert("Código inválido.");
+document.getElementById('enterBtn').addEventListener('click', async () => {
+    const code = document.getElementById('teamcodeInput').value.trim();
+    const name = document.getElementById('codenameInput').value.trim();
+    
+    if(code !== "MAN2020") {
+        alert("Código de equipe inválido!");
         return;
     }
-
-    if (name.length < 2) {
-        alert("O codename deve ter pelo menos 2 letras.");
+    
+    if(name.length < 2) {
+        alert("Insira um codename válido (mínimo 2 caracteres).");
         return;
     }
-
-    localStorage.setItem("codename", name);
-
-    auth.signInAnonymously().then(() => {
-        window.location = "chat.html";
-    });
-}
+    
+    try {
+        // Autenticação anónima Firebase
+        await firebase.auth().signInAnonymously();
+        localStorage.setItem('codename', name);
+        localStorage.setItem('team', code);
+        // Redireciona para chat.html
+        window.location.href = "chat.html";
+    } catch(e) {
+        console.error(e);
+        alert("Erro ao entrar no chat. Tente novamente.");
+    }
+});
 </script>
 
 </body>
