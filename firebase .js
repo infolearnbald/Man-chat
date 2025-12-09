@@ -1,4 +1,4 @@
-// Firebase config enviado por você
+// firebase.js
 const firebaseConfig = {
   apiKey: "AIzaSyCzsuBkwoJP_uxWEkIk2EWCOfqA560ij3M",
   authDomain: "darkchat-man.firebaseapp.com",
