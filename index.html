@@ -2,71 +2,26 @@
 <html lang="pt">
 <head>
 <meta charset="UTF-8">
+<title>NPL DEVS - Login</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DarkChat</title>
 <link rel="stylesheet" href="style.css">
-<link rel="manifest" href="manifest.json">
-
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
-
-<script src="firebase.js"></script>
 </head>
-
 <body>
-<div class="welcome-container">
-    <h1>Bem-vindo ao DarkChat</h1>
-    <p>Chat exclusivo para membros da equipe</p>
+<div class="login-container">
+    <h1>NPL DEVS</h1>
 
-    <input id="codenameInput" type="text" placeholder="Teu codename">
-    <input id="teamcodeInput" type="password" placeholder="Código de equipe">
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Senha">
 
-    <div class="button-group">
-        <button id="enterBtn">Entrar</button>
-        <button id="createBtn">Criar Conta</button>
-    </div>
+    <button id="loginBtn">Entrar</button>
 
-    <small>Somente membros com o código correto podem acessar</small>
+    <p>Não tens conta?
+        <a href="register.html">Criar conta</a>
+    </p>
+
+    <p id="errorMsg" class="error"></p>
 </div>
 
-<script>
-function authenticateAndRedirect(){
-    const codename = document.getElementById('codenameInput').value.trim();
-    const teamcode = document.getElementById('teamcodeInput').value.trim();
-
-    if(teamcode !== 'MAN2020'){
-        alert('Código de equipe inválido!');
-        return;
-    }
-    if(codename.length < 2){
-        alert('Insira um codename válido (mínimo 2 caracteres).');
-        return;
-    }
-
-    firebase.auth().signInAnonymously().then(userCred=>{
-        localStorage.setItem('codename', codename);
-        localStorage.setItem('team', teamcode);
-        localStorage.setItem('uid', userCred.user.uid);
-        window.location.href = 'chat.html';
-    }).catch(err=>{
-        console.error(err);
-        alert('Erro ao autenticar. Tente novamente.');
-    });
-}
-
-document.getElementById('enterBtn').addEventListener('click', authenticateAndRedirect);
-document.getElementById('createBtn').addEventListener('click', authenticateAndRedirect);
-
-// PWA: registrar service worker
-if('serviceWorker' in navigator){
-    window.addEventListener('load', ()=>{
-        navigator.serviceWorker.register('service-worker.js')
-        .then(()=>console.log('SW registrado'))
-        .catch(console.error);
-    });
-}
-</script>
+<script type="module" src="auth.js"></script>
 </body>
 </html>
