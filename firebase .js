@@ -1,14 +1,19 @@
-// firebase.js
+// Firebase Modular SDK
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+// CONFIG DO TEU FIREBASE
 const firebaseConfig = {
-  apiKey: "AIzaSyCzsuBkwoJP_uxWEkIk2EWCOfqA560ij3M",
-  authDomain: "darkchat-man.firebaseapp.com",
-  projectId: "MAN-Chat",
-  storageBucket: "darkchat-man.firebasestorage.app",
-  messagingSenderId: "118052023438",
-  appId: "1:118052023438:web:32de622f6d2d82041aeddf"
+  apiKey: "AIzaSyDrziQM8nHq6h7m5zHnZi3E1w9DwmkeLvI",
+  authDomain: "npl-devs.firebaseapp.com",
+  projectId: "npl-devs",
+  storageBucket: "npl-devs.firebasestorage.app",
+  messagingSenderId: "721966132336",
+  appId: "1:721966132336:web:8be6df97fe6c9dd41158b5"
 };
 
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-const storage = firebase.storage();
+export const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+export { onAuthStateChanged };
